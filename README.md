@@ -2,14 +2,16 @@
 MIDI synthesizer for android (soundfont2 is supported)
 
 # About SherlockMidi
-1) Just a MIDI player. SherlockMidi is a synthesizer for playing MIDI note on Android. You can use it with USB/Bluetooth-MIDI library together to create your MIDI application.
+  1) Just a MIDI player. SherlockMidi is a synthesizer for playing MIDI note on Android. You can use it with USB/Bluetooth-MIDI library together to create your MIDI application.
 
-2) soundfont2 file is supported.(sf2 file is supported)
+  2) soundfont2 file is supported.(sf2 file is supported)
 
 # Thanks
-javax.sound.midi
-https://github.com/kshoji/javax.sound.midi-for-Android
-https://github.com/kshoji
+  javax.sound.midi
+
+  https://github.com/kshoji/javax.sound.midi-for-Android
+
+  https://github.com/kshoji
 
 # Changelog
 
