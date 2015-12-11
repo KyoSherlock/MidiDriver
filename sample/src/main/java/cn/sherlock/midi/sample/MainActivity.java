@@ -2,6 +2,8 @@ package cn.sherlock.midi.sample;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.support.v4.view.MotionEventCompat;
+import android.view.MotionEvent;
 import android.view.View;
 
 import java.io.IOException;
@@ -20,6 +22,7 @@ public class MainActivity extends Activity {
 	private Receiver recv;
 	private boolean isPianoOn = false;
 	private boolean isWoodblockOn = false;
+	private boolean isBothOn = false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -39,55 +42,54 @@ public class MainActivity extends Activity {
 			e.printStackTrace();
 		}
 
-		this.findViewById(R.id.piano).setOnClickListener(new View.OnClickListener() {
+
+		this.findViewById(R.id.piano).setOnTouchListener(new View.OnTouchListener() {
 			@Override
-			public void onClick(View v) {
-				if (recv != null) {
-					if (!isPianoOn) {
-						try {
-							ShortMessage msg = new ShortMessage();
-							msg.setMessage(ShortMessage.NOTE_ON, 0, 60, 127);
-							recv.send(msg, -1);
-						} catch (InvalidMidiDataException e) {
-							e.printStackTrace();
-						}
-					} else {
-						try {
-							ShortMessage msg = new ShortMessage();
-							msg.setMessage(ShortMessage.NOTE_OFF, 0, 60, 127);
-							recv.send(msg, -1);
-						} catch (InvalidMidiDataException e) {
-							e.printStackTrace();
-						}
+			public boolean onTouch(View v, MotionEvent event) {
+				int action = MotionEventCompat.getActionMasked(event);
+				if (action == MotionEvent.ACTION_DOWN) {
+					try {
+						ShortMessage msg = new ShortMessage();
+						msg.setMessage(ShortMessage.NOTE_ON, 0, 60, 127);
+						recv.send(msg, -1);
+					} catch (InvalidMidiDataException e) {
+						e.printStackTrace();
 					}
-					isPianoOn = !isPianoOn;
+				} else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+					try {
+						ShortMessage msg = new ShortMessage();
+						msg.setMessage(ShortMessage.NOTE_OFF, 0, 60, 127);
+						recv.send(msg, -1);
+					} catch (InvalidMidiDataException e) {
+						e.printStackTrace();
+					}
 				}
+				return true;
 			}
 		});
 
-		this.findViewById(R.id.woodblock).setOnClickListener(new View.OnClickListener() {
+		this.findViewById(R.id.woodblock).setOnTouchListener(new View.OnTouchListener() {
 			@Override
-			public void onClick(View v) {
-				if (recv != null) {
-					if (!isWoodblockOn) {
-						try {
-							ShortMessage msg = new ShortMessage();
-							msg.setMessage(ShortMessage.NOTE_ON, 1, 60, 127);
-							recv.send(msg, -1);
-						} catch (InvalidMidiDataException e) {
-							e.printStackTrace();
-						}
-					} else {
-						try {
-							ShortMessage msg = new ShortMessage();
-							msg.setMessage(ShortMessage.NOTE_OFF, 1, 60, 127);
-							recv.send(msg, -1);
-						} catch (InvalidMidiDataException e) {
-							e.printStackTrace();
-						}
+			public boolean onTouch(View v, MotionEvent event) {
+				int action = MotionEventCompat.getActionMasked(event);
+				if (action == MotionEvent.ACTION_DOWN) {
+					try {
+						ShortMessage msg = new ShortMessage();
+						msg.setMessage(ShortMessage.NOTE_ON, 1, 60, 127);
+						recv.send(msg, -1);
+					} catch (InvalidMidiDataException e) {
+						e.printStackTrace();
 					}
-					isWoodblockOn = !isWoodblockOn;
+				} else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+					try {
+						ShortMessage msg = new ShortMessage();
+						msg.setMessage(ShortMessage.NOTE_OFF, 1, 60, 127);
+						recv.send(msg, -1);
+					} catch (InvalidMidiDataException e) {
+						e.printStackTrace();
+					}
 				}
+				return true;
 			}
 		});
 	}
