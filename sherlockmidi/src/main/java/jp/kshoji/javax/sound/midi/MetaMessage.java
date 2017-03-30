@@ -1,6 +1,7 @@
 package jp.kshoji.javax.sound.midi;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.Arrays;
 
@@ -14,8 +15,9 @@ public class MetaMessage extends MidiMessage {
 	
 	public static final int TYPE_END_OF_TRACK = 0x2f;
 	public static final int TYPE_TEMPO = 0x51;
-	
-	private static final byte[] defaultMessage = { (byte) META, 0 };
+
+	private static final byte[] defaultMessage = { (byte) META, 0, 0 };
+	private static final byte[] emptyData = {};
 
 	private int dataLength = 0;
 
@@ -29,17 +31,14 @@ public class MetaMessage extends MidiMessage {
 	/**
 	 * Constructor with raw data
 	 * 
-	 * @param data the data source, the length must be longer than 2 bytes
-	 * @throws NegativeArraySizeException MUST be caught. We can't throw {@link InvalidMidiDataException} because of API compatibility.
+	 * @param data the data source with META header(2 bytes) + length( > 1 byte), the data.length must be >= 3 bytes
+     * @throws NegativeArraySizeException MUST be caught. We can't throw {@link InvalidMidiDataException} because of API compatibility.
 	 */
-	protected MetaMessage(@NonNull byte[] data) throws NegativeArraySizeException {
+	protected MetaMessage(@NonNull final byte[] data) {
 		super(data);
 
-        if (data.length < 3) {
-            // 'dataLength' may negative value. Negative 'dataLength' will throw NegativeArraySizeException when getData() called.
-            throw new NegativeArraySizeException("Invalid meta event. data: " + Arrays.toString(data));
-        } else {
-            // check length
+		if (data.length >= 3) {
+			// check length
 			dataLength = data.length - 3;
 			int pos = 2;
 			while (pos < data.length && (data[pos] & 0x80) != 0) {
@@ -62,7 +61,7 @@ public class MetaMessage extends MidiMessage {
      * @param length unused parameter. Use always data.length
      * @throws InvalidMidiDataException
      */
-    public MetaMessage(int type, @NonNull byte[] data, int length) throws InvalidMidiDataException {
+    public MetaMessage(final int type, @Nullable final byte[] data, final int length) throws InvalidMidiDataException {
         super(null);
         setMessage(type, data, length);
     }
@@ -75,14 +74,21 @@ public class MetaMessage extends MidiMessage {
 	 * @param length unused parameter. Use always data.length
 	 * @throws InvalidMidiDataException
 	 */
-	public void setMessage(int type, @NonNull byte[] data, int length) throws InvalidMidiDataException {
+	public void setMessage(final int type, @Nullable final byte[] data, final int length) throws InvalidMidiDataException {
 		if (type >= 128 || type < 0) {
 			throw new InvalidMidiDataException("Invalid meta event. type: " + type);
 		}
 
-        int headerLength = 2 + getMidiValuesLength(data.length);
-        this.dataLength = data.length;
-        this.data = new byte[headerLength + data.length];
+		final byte[] newData;
+		if (data == null) {
+			newData = emptyData;
+		} else {
+			newData = data;
+		}
+
+        final int headerLength = 2 + getMidiValuesLength(newData.length);
+        this.dataLength = newData.length;
+        this.data = new byte[headerLength + newData.length];
         this.length = this.data.length;
 
         // Write header
@@ -90,11 +96,11 @@ public class MetaMessage extends MidiMessage {
 		this.data[1] = (byte) type;
 
         // Write data length
-		writeMidiValues(this.data, 2, data.length);
+		writeMidiValues(this.data, 2, newData.length);
 
         // Write data
-		if (data.length > 0) {
-			System.arraycopy(data, 0, this.data, headerLength, data.length);
+		if (newData.length > 0) {
+			System.arraycopy(newData, 0, this.data, headerLength, newData.length);
 		}
 	}
 
@@ -104,7 +110,7 @@ public class MetaMessage extends MidiMessage {
 	 * @return the type
 	 */
 	public int getType() {
-		if (data.length >= 2) {
+		if (data != null && data.length >= 2) {
 			return data[1] & 0xff;
 		}
 		return 0;
@@ -117,15 +123,23 @@ public class MetaMessage extends MidiMessage {
 	 */
     @NonNull
     public byte[] getData() {
-		byte[] returnedArray = new byte[dataLength];
-		System.arraycopy(data, (data.length - dataLength), returnedArray, 0, dataLength);
+		if (data == null) {
+			return emptyData;
+		}
+
+		final byte[] returnedArray = new byte[dataLength];
+		System.arraycopy(data, data.length - dataLength, returnedArray, 0, dataLength);
 		return returnedArray;
 	}
 
-    @NonNull
+    @SuppressWarnings("CloneDoesntCallSuperClone")
+	@NonNull
 	@Override
 	public Object clone() {
-		byte[] result = new byte[data.length];
+		if (data == null) {
+			return new MetaMessage(emptyData);
+		}
+		final byte[] result = new byte[data.length];
 		System.arraycopy(data, 0, result, 0, data.length);
 		return new MetaMessage(result);
 	}
@@ -136,11 +150,11 @@ public class MetaMessage extends MidiMessage {
      * @param value the value to write
      * @return the data length
      */
-	private static int getMidiValuesLength(long value) {
+	private static int getMidiValuesLength(final long value) {
 		int length = 0;
 		long currentValue = value;
 		do {
-			currentValue = currentValue >> 7;
+            currentValue >>= 7;
 			length++;
 		} while (currentValue > 0);
 		return length;
@@ -153,7 +167,7 @@ public class MetaMessage extends MidiMessage {
      * @param offset the offset
      * @param value the value to write
      */
-	private static void writeMidiValues(@NonNull byte[] data, int offset, long value) {
+	private static void writeMidiValues(@NonNull final byte[] data, final int offset, final long value) {
 		int shift = 63;
 		while ((shift > 0) && ((value & (0x7f << shift)) == 0)) {
 			shift -= 7;
